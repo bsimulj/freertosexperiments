@@ -14,6 +14,7 @@ void ConsoleInterface::Init()
 {
     // initialize serial communication at 9600 bits per second:
     stdio_init_all();
+    stdio_usb_connected();
 }
 void ConsoleInterface::PrintResult(String &s)
 {
@@ -127,7 +128,7 @@ void ConsoleInterface::ProcessCommand()
             message.receiver = E_PROCESS_RECEIVE;
             message.cmd = E_READ_SCAN_TIME;
 
-            MailBox::Instance().SendMessage(message);
+            MB.SendMessage(message);
         }
     }
     else if (subset_ != "")

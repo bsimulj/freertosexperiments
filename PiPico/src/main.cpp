@@ -18,7 +18,7 @@ void setup()
 {
     buffer = "Testiranje\n";
     console.Init();
-    MailBox::Instance().Init();
+    MB.Init();
 
     xTaskCreate(
         Process, "Process" // A name just for humans
@@ -73,10 +73,10 @@ void Process(void *pvParameters __attribute__((unused))) // This is a Task.
     for (;;) // A Task shall never return or exit.
     {
 
-        if (MailBox::Instance().MessageAvailable() && (MailBox::Instance().CheckReceiver() == E_PROCESS_RECEIVE))
+        if (MB.MessageAvailable() && (MB.CheckReceiver() == E_PROCESS_RECEIVE))
         {
             printf("process message available \n");
-            Message message = MailBox::Instance().ReceiveMessage();
+            Message message = MB.ReceiveMessage();
             switch (message.cmd)
             {
             case E_READ_SCAN_TIME:
@@ -84,7 +84,7 @@ void Process(void *pvParameters __attribute__((unused))) // This is a Task.
                 message.receiver = E_CONSOLE_RECEIVE;
                 message.cmd = E_READ_SCAN_TIME;
                 message.value.scanTime_ms = pio.GetScanTime_ms();
-                MailBox::Instance().SendMessage(message);
+                MB.SendMessage(message);
             }
             break;
 
@@ -106,10 +106,10 @@ void Console(void *pvParameters __attribute__((unused))) // This is a Task.
 {
     for (;;) // A Task shall never return or exit.
     {
-        if (MailBox::Instance().MessageAvailable() && (MailBox::Instance().CheckReceiver() == E_CONSOLE_RECEIVE))
+        if (MB.MessageAvailable() && (MB.CheckReceiver() == E_CONSOLE_RECEIVE))
         {
             printf("console message available \n");
-            Message message = MailBox::Instance().ReceiveMessage();
+            Message message = MB.ReceiveMessage();
             switch (message.cmd)
             {
             case E_READ_SCAN_TIME:
