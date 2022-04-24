@@ -75,7 +75,8 @@ void Process(void *pvParameters __attribute__((unused))) // This is a Task.
 
         if (MB.MessageAvailable() && (MB.CheckReceiver() == E_PROCESS_RECEIVE))
         {
-            printf("process message available \n");
+            String S("process message available");
+            console.PrintResult(S);
             Message message = MB.ReceiveMessage();
             switch (message.cmd)
             {
@@ -108,7 +109,8 @@ void Console(void *pvParameters __attribute__((unused))) // This is a Task.
     {
         if (MB.MessageAvailable() && (MB.CheckReceiver() == E_CONSOLE_RECEIVE))
         {
-            printf("console message available \n");
+            String S("console message available");
+            console.PrintResult(S);
             Message message = MB.ReceiveMessage();
             switch (message.cmd)
             {

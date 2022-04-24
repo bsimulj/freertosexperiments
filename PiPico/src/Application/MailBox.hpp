@@ -14,7 +14,7 @@ struct Message
         uint8_t digitalInputs;
         uint8_t digitalOutputs;
         uint16_t scanTime_ms;
-    }value;
+    } value;
 };
 
 enum MessageDeffinitions
@@ -28,7 +28,7 @@ enum MessageDeffinitions
 class MailBox : public Singleton<MailBox>
 {
     friend class Singleton<MailBox>;
-    
+
 public:
     void Init();
     bool MessageAvailable();

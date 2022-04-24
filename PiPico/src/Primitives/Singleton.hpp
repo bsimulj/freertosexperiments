@@ -33,3 +33,4 @@ private:
     Singleton(Singleton const &);
     Singleton &operator=(Singleton const &);
 };
+
