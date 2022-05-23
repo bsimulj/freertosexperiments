@@ -7,6 +7,10 @@
 		{
 			"name": "PiPico",
 			"path": "PiPico"
+		},
+		{
+			"name": "ESP32",
+			"path": "ESP32"
 		}
 	],
 	"settings": {
