@@ -1,6 +1,8 @@
 #include "MailBox.hpp"
 #include "queue.h"
 
+MailBox &mbDebug = MB;
+
 void MailBox::Init()
 {
     mailbox_ = xQueueCreate(1, sizeof(Message));

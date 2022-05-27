@@ -1,6 +1,9 @@
 #include <stdio.h>
+#include <pico/stdio.h>
 #include "ConsoleInterface.hpp"
 #include "MailBox.hpp"
+
+extern stdio_driver_t stdio_usb;
 
 ConsoleInterface::ConsoleInterface()
 {
@@ -14,11 +17,16 @@ void ConsoleInterface::Init()
 {
     // initialize serial communication at 9600 bits per second:
     stdio_init_all();
+    stdio_set_driver_enabled(&stdio_usb, true);
+    stdio_usb_init();
+    String S("console initialized");
+    PrintResult(S);
 }
 void ConsoleInterface::PrintResult(String &s)
 {
     s += "\n";
     printf(s.c_str());
+    stdio_flush();
 }
 
 void ConsoleInterface::ReadCommand()
@@ -32,6 +40,7 @@ void ConsoleInterface::ReadCommand()
         }
         else
         {
+            stdio_flush();
             break;
         }
     }
@@ -118,7 +127,8 @@ void ConsoleInterface::ProcessCommand()
 {
     if (subset_ == "pio")
     {
-        printf("pio \n");
+        String S("pio");
+        PrintResult(S);
         subset_ = "";
         subset_.trim();
         if (subsetCommand_ == "scanTime")
@@ -127,12 +137,13 @@ void ConsoleInterface::ProcessCommand()
             message.receiver = E_PROCESS_RECEIVE;
             message.cmd = E_READ_SCAN_TIME;
 
-            MailBox::Instance().SendMessage(message);
+            MB.SendMessage(message);
         }
     }
     else if (subset_ != "")
     {
-        printf("Unknown command\n");
+        String S("Unknown command");
+        PrintResult(S);
         subset_ = "";
         subset_.trim();
     }

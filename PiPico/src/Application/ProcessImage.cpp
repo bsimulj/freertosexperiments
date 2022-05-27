@@ -27,6 +27,8 @@ void ProcessImage::WriteOutputs()
 {
     out_.x.di0 = !out_.x.di0;
     digitalWrite(PICO_DEFAULT_LED_PIN, out_.x.di0);
+
+    // Calculate scan lenght. Usefull to implement timers
     uint32_t timeStamp = to_ms_since_boot(get_absolute_time());
     scanTime_ms_ = static_cast<uint16_t>(timeStamp - previousScan_ms);
     previousScan_ms = timeStamp;

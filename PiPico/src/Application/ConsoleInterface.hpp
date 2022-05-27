@@ -20,5 +20,3 @@ private:
     String subsetArg1_;
 
 };
-
-
