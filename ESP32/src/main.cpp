@@ -1,152 +1,121 @@
-#include <Arduino.h>
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "esp_system.h"
-#include "esp_spi_flash.h"
+#include <stdio.h>
+#include <sstream>
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
+#include <esp_log.h>
+#include <driver/gpio.h>
+#include <esp_timer.h>
+#include <esp_task_wdt.h>
+//#include "esp_system.h"
+//#include "esp_spi_flash.h"
+#include "Application/ProcessImage.hpp"
+#include "Application/ConsoleInterface.hpp"
+#include "Application/MailBox.hpp"
 
-struct ProcessOutputs
+extern "C"
 {
-  union
-  {
-    struct
-    {
-      uint8_t nozzle0 : 1;
-      uint8_t nozzle1 : 1;
-      uint8_t nozzle2 : 1;
-    } x; // see naming convention
-    uint8_t byte;
-  };
-};
-
-ProcessOutputs out_;
-
-uint64_t previousTime = 0;
-uint16_t increment = 0;
-uint32_t setCycle = 10000;
-uint32_t timerCycle = 0;
-uint32_t oneSec = 0;
-uint32_t nozzleSwitch = 0;
-uint8_t load = 100;
-bool ledIndication;
-  int i = 0;
-
-bool nozle1;
-bool nozle2;
-bool nozle3;
-
-void setup()
-{
-  ledIndication = false;
-  out_.byte = 0;
-  pinMode(4, OUTPUT);
-  pinMode(18, OUTPUT);
-  pinMode(1, OUTPUT);
-  pinMode(BUILTIN_LED, OUTPUT);
+  void app_main(void);
 }
 
-void loop()
+// define two Tasks for DigitalRead & AnalogRead
+void Process(void *pvParameters);
+void Console(void *pvParameters);
+ProcessImage pio;
+ConsoleInterface console;
+
+// the setup function runs once when you press reset or power the board
+void app_main(void)
 {
+  pio.Init();
+  console.Init();
+  MailBox::Instance().Init();
+  //  Now set up two Tasks to run independently.
 
-  increment = millis() - previousTime;
-  previousTime = millis();
+  xTaskCreate(
+      Process, "Process" // A name just for humans
+      ,
+      2048 // This stack size can be checked & adjusted by reading the Stack Highwater
+      ,
+      NULL // Parameters for the task
+      ,
+      0 // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
+      ,
+      NULL); // Task Handle
 
-  if (timerCycle <= setCycle)
+  // Now set up two Tasks to run independently.
+  xTaskCreate(
+      Console, "Console" // A name just for humans
+      ,
+      2048 // This stack size can be checked & adjusted by reading the Stack Highwater
+      ,
+      NULL // Parameters for the task
+      ,
+      0 // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
+      ,
+      NULL); // Task Handle
+}
+
+void Process(void *pvParameters __attribute__((unused))) // This is a Task.
+{
+  for (;;) // A Task shall never return or exit.
   {
-    timerCycle += static_cast<uint32_t>(increment);
+
+    if (MailBox::Instance().MessageAvailable() && (MailBox::Instance().CheckReceiver() == E_PROCESS_RECEIVE))
+    {
+      console.PrintResult("Process message available\n");
+      Message message = MailBox::Instance().ReceiveMessage();
+      switch (message.cmd)
+      {
+      case E_READ_SCAN_TIME:
+      {
+        message.receiver = E_CONSOLE_RECEIVE;
+        message.cmd = E_READ_SCAN_TIME;
+        message.value.scanTime_us = pio.GetScanTime_us();
+        MailBox::Instance().SendMessage(message);
+      }
+      break;
+
+      default:
+        break;
+      }
+    }
+
+    pio.ReadInputs();
+    pio.WriteOutputs();
+    
+    taskYIELD();
+    // vTaskDelay(10 / portTICK_PERIOD_MS);
   }
-  else
+}
+
+void Console(void *pvParameters __attribute__((unused))) // This is a Task.
+{
+  for (;;) // A Task shall never return or exit.
   {
-    timerCycle = 0;
-    /*
-    switch (load)
+    if (MailBox::Instance().MessageAvailable() && (MailBox::Instance().CheckReceiver() == E_CONSOLE_RECEIVE))
     {
-    case 100:
-    {
-      nozzleSwitch += static_cast<uint32_t>(increment);
-
-      if (nozzleSwitch > 3)
+      console.PrintResult("console message available\n");
+      Message message = MailBox::Instance().ReceiveMessage();
+      switch (message.cmd)
       {
-        nozzleSwitch = 0;
-        out_.byte = 0;
-        load = 66;
+      case E_READ_SCAN_TIME:
+      {
+        std::stringstream stream;
+        stream << "Scan lenght " << message.value.scanTime_us << "us\n";
+        console.PrintResult(stream.str());
+      }
+      break;
+
+      default:
+        break;
       }
     }
-    break;
-    case 66:
-    {
-      nozzleSwitch += static_cast<uint32_t>(increment);
 
-      if (nozzleSwitch > 3)
-      {
-        nozzleSwitch = 0;
+    console.ReadCommand();
+    console.ProcessCommand();
 
-        out_.byte < 1;
-        if (out_.byte == 6)
-        {
-          out_.byte = 3;
-          load = 33;
-        }
-      }
-    }
-    break;
-    case 33:
-    {
-      nozzleSwitch += static_cast<uint32_t>(increment);
-
-      if (nozzleSwitch > 3)
-      {
-        nozzleSwitch = 0;
-        out_.byte < 1;
-        if (out_.byte == 4)
-        {
-          out_.byte = 6;
-          load = 100;
-        }
-      }
-    }
-    default:
-      load = 100;
-      break;
-    }
-    */
-    switch (i)
-    {
-    case 0:
-      /* code */
-      out_.x.nozzle0 = true;
-      out_.x.nozzle1 = false;
-      out_.x.nozzle2 = false;
-      break;
-    case 1:
-      /* code */
-      out_.x.nozzle0 = false;
-      out_.x.nozzle1 = true;
-      out_.x.nozzle2 = false;
-      break;
-    case 2:
-      /* code */
-      out_.x.nozzle0 = false;
-      out_.x.nozzle1 = false;
-      out_.x.nozzle2 = true;
-      break;
-    default:
-      break;
-    }
-
-    if (i < 3)
-    {
-      i++;
-    }
-    else
-    {
-      i = 0;
-    }
-
-    digitalWrite(4, out_.x.nozzle0);
-    digitalWrite(18, out_.x.nozzle1);
-    digitalWrite(1, out_.x.nozzle2);
-
-    ledIndication = !ledIndication;
-    digitalWrite(BUILTIN_LED, ledIndication);
+    taskYIELD();
+    // vTaskDelay(10 / portTICK_PERIOD_MS);
+    // #define configUSE_PREEMPTION			0 this parameter is modified from 1 to 0
   }
 }
