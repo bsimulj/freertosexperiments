@@ -5,6 +5,7 @@
 
 // Search for MB and replace with MailBox::Instance()
 #define MB MailBox::Instance()
+
 struct Message
 {
     uint8_t receiver;
@@ -31,6 +32,8 @@ class MailBox : public Singleton<MailBox>
 
 public:
     void Init();
+    void ProcessRun();
+    void ConsoleRun();
     bool MessageAvailable();
     uint8_t CheckReceiver();
     void SendMessage(Message message);

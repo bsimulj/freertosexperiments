@@ -1,8 +1,9 @@
-#include <stdio.h>
-#include <esp_console.h>
-#include <linenoise/linenoise.h>
 #include "ConsoleInterface.hpp"
 #include "MailBox.hpp"
+#include <esp_console.h>
+#include <linenoise/linenoise.h>
+#include <sstream>
+#include <stdio.h>
 
 ConsoleInterface::ConsoleInterface()
 {
@@ -25,12 +26,13 @@ void ConsoleInterface::PrintResult(const std::string &s)
 void ConsoleInterface::ReadCommand()
 {
     char str[60];
-    fgets(str,60,stdin);
-    inputBuffer_.assign(str);
+    std::stringstream stream;
+    fgets(str, sizeof(str), stdin);
+    fflush(stdin);
+    stream << str;
 
-    if (inputBuffer_.length() != 0)
+    if (stream.str().length() != 0)
     {
-        uint8_t phase = 0;
         subsetCommand_ = "";
         subsetCommand_.shrink_to_fit();
         subsetArg0_ = "";
@@ -38,71 +40,28 @@ void ConsoleInterface::ReadCommand()
         subsetArg1_ = "";
         subsetArg1_.shrink_to_fit();
 
-        for (uint8_t i = 0; i < inputBuffer_.length(); i++)
+        stream >> subset_;
+        if (stream.fail())
         {
-            if ((inputBuffer_.at(i) == '\r') || (inputBuffer_.at(i) == '\n'))
-            {
-                break;
-            }
-
-            switch (phase)
-            {
-            case 0:
-            {
-                if (inputBuffer_.at(i) != ' ')
-                {
-                    subset_.append(1, inputBuffer_.at(i));
-                }
-                else
-                {
-                    phase++;
-                }
-            }
-            break;
-            case 1:
-            {
-                if (inputBuffer_.at(i) != ' ')
-                {
-                    subsetCommand_.append(1, inputBuffer_.at(i));
-                }
-                else
-                {
-                    phase++;
-                }
-            }
-            break;
-            case 2:
-            {
-                if (inputBuffer_.at(i) != ' ')
-                {
-                    subsetArg0_.append(1, inputBuffer_.at(i));
-                }
-                else
-                {
-                    phase++;
-                }
-            }
-            break;
-            case 3:
-            {
-                if (inputBuffer_.at(i) != ' ')
-                {
-                    subsetArg1_.append(1, inputBuffer_.at(i));
-                }
-                else
-                {
-                    phase++;
-                }
-            }
-            break;
-
-            default:
-                break;
-            }
+            return;
         }
 
-        inputBuffer_ = "";
-        inputBuffer_.shrink_to_fit();
+        stream >> subsetCommand_;
+        if (stream.fail())
+        {
+            return;
+        }
+
+        stream >> subsetArg0_;
+        if (stream.fail())
+        {
+            return;
+        }
+        stream >> subsetArg1_;
+        if (stream.fail())
+        {
+            return;
+        }
     }
 }
 

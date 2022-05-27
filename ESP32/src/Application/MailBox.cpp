@@ -1,11 +1,59 @@
 #include "MailBox.hpp"
+#include <Application/ConsoleInterface.hpp>
+#include <Application/ProcessImage.hpp>
 #include <freertos/queue.h>
+#include <sstream>
 
 MailBox &mbDebug = MB;
 
 void MailBox::Init()
 {
     mailbox_ = xQueueCreate(1, sizeof(Message));
+}
+
+void MailBox::ProcessRun()
+{
+    if (MB.MessageAvailable() && (MB.CheckReceiver() == E_PROCESS_RECEIVE))
+    {
+        ConsoleInterface::Instance().PrintResult("Process message available\n");
+        Message message = MailBox::Instance().ReceiveMessage();
+        switch (message.cmd)
+        {
+        case E_READ_SCAN_TIME:
+        {
+            message.receiver = E_CONSOLE_RECEIVE;
+            message.cmd = E_READ_SCAN_TIME;
+            message.value.scanTime_us = PIO.GetScanTime_us();
+            MB.SendMessage(message);
+        }
+        break;
+
+        default:
+            break;
+        }
+    }
+}
+
+void MailBox::ConsoleRun()
+{
+    if (MB.MessageAvailable() && (MB.CheckReceiver() == E_CONSOLE_RECEIVE))
+    {
+        CONSOLE.PrintResult("console message available\n");
+        Message message = MB.ReceiveMessage();
+        switch (message.cmd)
+        {
+        case E_READ_SCAN_TIME:
+        {
+            std::stringstream stream;
+            stream << "Scan lenght " << message.value.scanTime_us << "us\n";
+            CONSOLE.PrintResult(stream.str());
+        }
+        break;
+
+        default:
+            break;
+        }
+    }
 }
 
 bool MailBox::MessageAvailable()
@@ -40,7 +88,7 @@ void MailBox::SendMessage(Message message)
 {
     if (mailbox_)
     {
-        xQueueSend(mailbox_, &message, (TickType_t)0); //portMAX_DELAY
+        xQueueSend(mailbox_, &message, (TickType_t)0); // portMAX_DELAY
     }
 }
 

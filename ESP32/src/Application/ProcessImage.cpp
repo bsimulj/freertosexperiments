@@ -1,9 +1,8 @@
-#include <stdint.h>
+#include "ProcessImage.hpp"
+#include <driver/gpio.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
-#include <driver/gpio.h>
-#include <esp_log.h>
-#include "ProcessImage.hpp"
+#include <stdint.h>
 
 ProcessImage::ProcessImage()
 {
@@ -36,22 +35,22 @@ void ProcessImage::ReadInputs()
 
 void ProcessImage::WriteOutputs()
 {
-    gpio_set_level(GPIO_NUM_15,io_.x.d15);
+    gpio_set_level(GPIO_NUM_15, io_.x.d15);
 
-    io_.x.d2 = !io_.x.d2; //Toggle LED
-    gpio_set_level(GPIO_NUM_2,io_.x.d2);
+    io_.x.d2 = !io_.x.d2; // Toggle LED
+    gpio_set_level(GPIO_NUM_2, io_.x.d2);
 
-    gpio_set_level(GPIO_NUM_4,io_.x.d4);
-    gpio_set_level(GPIO_NUM_16,io_.x.rx2);
-    gpio_set_level(GPIO_NUM_17,io_.x.tx2);
-    gpio_set_level(GPIO_NUM_5,io_.x.d5);
-    gpio_set_level(GPIO_NUM_18,io_.x.d18);
-    gpio_set_level(GPIO_NUM_19,io_.x.d19);
-    gpio_set_level(GPIO_NUM_21,io_.x.d21);
+    gpio_set_level(GPIO_NUM_4, io_.x.d4);
+    gpio_set_level(GPIO_NUM_16, io_.x.rx2);
+    gpio_set_level(GPIO_NUM_17, io_.x.tx2);
+    gpio_set_level(GPIO_NUM_5, io_.x.d5);
+    gpio_set_level(GPIO_NUM_18, io_.x.d18);
+    gpio_set_level(GPIO_NUM_19, io_.x.d19);
+    gpio_set_level(GPIO_NUM_21, io_.x.d21);
     // gpio_set_level(GPIO_NUM_3,io_.x.rx0); Used for a console application
     // gpio_set_level(GPIO_NUM_1,io_.x.tx0);
-    gpio_set_level(GPIO_NUM_22,io_.x.d22);
-    gpio_set_level(GPIO_NUM_23,io_.x.d23);
+    gpio_set_level(GPIO_NUM_22, io_.x.d22);
+    gpio_set_level(GPIO_NUM_23, io_.x.d23);
 
     uint64_t timeStamp_us = static_cast<uint64_t>(esp_timer_get_time());
     scanTime_us = static_cast<uint16_t>(timeStamp_us - previousScan_us);
@@ -97,8 +96,8 @@ void ProcessImage::Init()
     outputBitMask = outputBitMask | (1ULL << GPIO_NUM_18);
     outputBitMask = outputBitMask | (1ULL << GPIO_NUM_19);
     outputBitMask = outputBitMask | (1ULL << GPIO_NUM_21);
-    //outputBitMask = outputBitMask | (1ULL << GPIO_NUM_3);
-    //outputBitMask = outputBitMask | (1ULL << GPIO_NUM_1);
+    // outputBitMask = outputBitMask | (1ULL << GPIO_NUM_3);
+    // outputBitMask = outputBitMask | (1ULL << GPIO_NUM_1);
     outputBitMask = outputBitMask | (1ULL << GPIO_NUM_22);
     outputBitMask = outputBitMask | (1ULL << GPIO_NUM_23);
 

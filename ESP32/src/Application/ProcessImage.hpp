@@ -1,5 +1,10 @@
 #pragma once
 
+#include <stdio.h>
+#include <Primitives/Singleton.hpp>
+
+#define PIO ProcessImage::Instance()
+
 union ByteWrapper
 {
     struct Bits
@@ -51,17 +56,18 @@ union BoardIO
     } x;
 };
 
-class ProcessImage
+class ProcessImage : public Singleton<ProcessImage>
 {
+    friend class Singleton<ProcessImage>;
 public:
     void Init();
-    ProcessImage();
-    ~ProcessImage();
     void ReadInputs();
     void WriteOutputs();
     uint16_t GetScanTime_us() const;
 
 private:
+    ProcessImage();
+    ~ProcessImage();
     BoardIO io_;
     uint16_t scanTime_us;
     uint64_t previousScan_us;
