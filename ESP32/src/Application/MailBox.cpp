@@ -1,11 +1,11 @@
 #include "MailBox.hpp"
 #include <freertos/queue.h>
-#include <esp_log.h>
+
+MailBox &mbDebug = MB;
 
 void MailBox::Init()
 {
     mailbox_ = xQueueCreate(1, sizeof(Message));
-    ESP_LOGD("Mailbox initialized \n",);
 }
 
 bool MailBox::MessageAvailable()

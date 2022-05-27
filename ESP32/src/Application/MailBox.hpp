@@ -1,7 +1,10 @@
 #pragma once
+#include <Primitives/Singleton.hpp>
 #include <freertos/FreeRTOS.h>
 #include <freertos/queue.h>
 
+// Search for MB and replace with MailBox::Instance()
+#define MB MailBox::Instance()
 struct Message
 {
     uint8_t receiver;
@@ -11,7 +14,7 @@ struct Message
         uint8_t digitalInputs;
         uint8_t digitalOutputs;
         uint16_t scanTime_us;
-    }value;
+    } value;
 };
 
 enum MessageDeffinitions
@@ -22,27 +25,20 @@ enum MessageDeffinitions
     E_READ_SCAN_TIME = 0
 };
 
-class MailBox
+class MailBox : public Singleton<MailBox>
 {
+    friend class Singleton<MailBox>;
+
 public:
-    static MailBox &Instance()
-    {
-        static MailBox instance;
-        return instance;
-    }
     void Init();
     bool MessageAvailable();
     uint8_t CheckReceiver();
     void SendMessage(Message message);
     Message ReceiveMessage();
 
-protected:
-    MailBox() {}
-
 private:
-    MailBox(MailBox const &);
-    MailBox &operator=(MailBox const &);
-
+    MailBox(){};
+    ~MailBox(){};
     QueueHandle_t mailbox_;
     enum MessageDefinition
     {
