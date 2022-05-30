@@ -1,17 +1,9 @@
 #include "ConsoleInterface.hpp"
 #include "MailBox.hpp"
-#include <esp_console.h>
-#include <linenoise/linenoise.h>
+#include <soc/rtc.h>
+#include <esp_system.h>
 #include <sstream>
 #include <stdio.h>
-
-ConsoleInterface::ConsoleInterface()
-{
-}
-
-ConsoleInterface::~ConsoleInterface()
-{
-}
 
 void ConsoleInterface::Init()
 {
@@ -33,13 +25,6 @@ void ConsoleInterface::ReadCommand()
 
     if (stream.str().length() != 0)
     {
-        subsetCommand_ = "";
-        subsetCommand_.shrink_to_fit();
-        subsetArg0_ = "";
-        subsetArg0_.shrink_to_fit();
-        subsetArg1_ = "";
-        subsetArg1_.shrink_to_fit();
-
         stream >> subset_;
         if (stream.fail())
         {
@@ -69,9 +54,8 @@ void ConsoleInterface::ProcessCommand()
 {
     if (subset_ == "pio")
     {
-        printf("pio \n");
-        subset_ = "";
-        subset_.shrink_to_fit();
+        subset_.clear();
+        PrintResult("pio \n");
         if (subsetCommand_ == "scanTime")
         {
             Message message;
@@ -81,10 +65,35 @@ void ConsoleInterface::ProcessCommand()
             MailBox::Instance().SendMessage(message);
         }
     }
+    else if (subset_ == "mcu")
+    {
+        subset_.clear();
+        PrintResult("mcu \n");
+        if (subsetCommand_ == "freq")
+        {
+            std::stringstream stream;
+            stream << "Freq: " << ets_get_cpu_frequency() << "\n";
+            PrintResult(stream.str());
+        }
+        if (subsetCommand_ == "freqSetLow")
+        {
+            rtc_cpu_freq_config_t conf;
+            conf.source = rtc_cpu_freq_src_t::RTC_CPU_FREQ_SRC_XTAL;
+            rtc_clk_cpu_freq_set_config_fast(&conf);
+            std::stringstream stream;
+            stream << "Freq: " << ets_get_cpu_frequency() << "\n";
+            PrintResult(stream.str());
+        }
+        if (subsetCommand_ == "freqSetHigh")
+        {
+            std::stringstream stream;
+            stream << "Freq: " << ets_get_cpu_frequency() << "\n";
+            PrintResult(stream.str());
+        }
+    }
     else if (subset_ != "")
     {
-        printf("Unknown command\n");
-        subset_ = "";
-        subset_.shrink_to_fit();
+        subset_.clear();
+        PrintResult("Unknown command\n");
     }
 }
