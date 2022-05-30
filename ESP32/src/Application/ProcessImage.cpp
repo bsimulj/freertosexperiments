@@ -36,10 +36,7 @@ void ProcessImage::ReadInputs()
 void ProcessImage::WriteOutputs()
 {
     gpio_set_level(GPIO_NUM_15, io_.x.d15);
-
-    io_.x.d2 = !io_.x.d2; // Toggle LED
     gpio_set_level(GPIO_NUM_2, io_.x.d2);
-
     gpio_set_level(GPIO_NUM_4, io_.x.d4);
     gpio_set_level(GPIO_NUM_16, io_.x.rx2);
     gpio_set_level(GPIO_NUM_17, io_.x.tx2);
@@ -53,7 +50,7 @@ void ProcessImage::WriteOutputs()
     gpio_set_level(GPIO_NUM_23, io_.x.d23);
 
     uint64_t timeStamp_us = static_cast<uint64_t>(esp_timer_get_time());
-    scanTime_us = static_cast<uint16_t>(timeStamp_us - previousScan_us);
+    scanTime_us = static_cast<uint32_t>(timeStamp_us - previousScan_us);
     previousScan_us = timeStamp_us;
 }
 
@@ -104,4 +101,9 @@ void ProcessImage::Init()
     conf.pin_bit_mask = outputBitMask;
     gpio_config(&conf);
     previousScan_us = 0;
+}
+
+BoardIO &ProcessImage::IO()
+{
+    return io_;
 }
