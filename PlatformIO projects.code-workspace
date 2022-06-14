@@ -11,6 +11,10 @@
 		{
 			"name": "ESP32",
 			"path": "ESP32"
+		},
+		{
+			"name": "SPRINKLER",
+			"path": "ESP32_SPRINKLER"
 		}
 	],
 	"settings": {
