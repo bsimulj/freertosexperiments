@@ -3,6 +3,7 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <stdint.h>
+#include <Application/MailBox.hpp>
 
 ProcessImage::ProcessImage()
 {
@@ -15,6 +16,28 @@ uint16_t ProcessImage::GetScanTime_us() const
 
 ProcessImage::~ProcessImage()
 {
+}
+
+void ProcessImage::MBProcessRun()
+{
+    if (MB.MessageAvailable() && (MB.CheckReceiver() == E_PROCESS_RECEIVE))
+    {
+        Message message = MailBox::Instance().ReceiveMessage();
+        switch (message.cmd)
+        {
+        case MessageDefinition::E_READ_SCAN_TIME:
+        {
+            message.receiver = Receiver::E_CONSOLE_RECEIVE;
+            message.cmd = E_READ_SCAN_TIME;
+            message.value.scanTime_us = PIO.GetScanTime_us();
+            MB.SendMessage(message);
+        }
+        break;
+
+        default:
+            break;
+        }
+    }
 }
 
 void ProcessImage::ReadInputs()
@@ -38,14 +61,14 @@ void ProcessImage::WriteOutputs()
     gpio_set_level(GPIO_NUM_15, io_.x.d15);
     gpio_set_level(GPIO_NUM_2, io_.x.d2);
     gpio_set_level(GPIO_NUM_4, io_.x.d4);
-    gpio_set_level(GPIO_NUM_16, io_.x.rx2);
-    gpio_set_level(GPIO_NUM_17, io_.x.tx2);
+    // gpio_set_level(GPIO_NUM_16, io_.x.rx2);
+    // gpio_set_level(GPIO_NUM_17, io_.x.tx2);
     gpio_set_level(GPIO_NUM_5, io_.x.d5);
     gpio_set_level(GPIO_NUM_18, io_.x.d18);
     gpio_set_level(GPIO_NUM_19, io_.x.d19);
     gpio_set_level(GPIO_NUM_21, io_.x.d21);
-    // gpio_set_level(GPIO_NUM_3,io_.x.rx0); Used for a console application
-    // gpio_set_level(GPIO_NUM_1,io_.x.tx0);
+    // gpio_set_level(GPIO_NUM_3,io_.x.rx0); // Used for a console application
+    //gpio_set_level(GPIO_NUM_1,io_.x.tx0);    // Used for a console application
     gpio_set_level(GPIO_NUM_22, io_.x.d22);
     gpio_set_level(GPIO_NUM_23, io_.x.d23);
 
@@ -81,20 +104,21 @@ void ProcessImage::Init()
 
     // Outputs
     conf.mode = gpio_mode_t::GPIO_MODE_OUTPUT;
+    conf.pull_down_en = gpio_pulldown_t::GPIO_PULLDOWN_ENABLE;
     uint64_t outputBitMask = 0;
     // outputBitMask = outputBitMask | (1ULL<<BitNumber); this is now to configure which bits are outputs
     // GPIO is to used as BitNumber
     outputBitMask = outputBitMask | (1ULL << GPIO_NUM_15);
     outputBitMask = outputBitMask | (1ULL << GPIO_NUM_2);
     outputBitMask = outputBitMask | (1ULL << GPIO_NUM_4);
-    outputBitMask = outputBitMask | (1ULL << GPIO_NUM_16);
-    outputBitMask = outputBitMask | (1ULL << GPIO_NUM_17);
+    // outputBitMask = outputBitMask | (1ULL << GPIO_NUM_16);
+    // outputBitMask = outputBitMask | (1ULL << GPIO_NUM_17);
     outputBitMask = outputBitMask | (1ULL << GPIO_NUM_5);
     outputBitMask = outputBitMask | (1ULL << GPIO_NUM_18);
     outputBitMask = outputBitMask | (1ULL << GPIO_NUM_19);
     outputBitMask = outputBitMask | (1ULL << GPIO_NUM_21);
-    // outputBitMask = outputBitMask | (1ULL << GPIO_NUM_3);
-    // outputBitMask = outputBitMask | (1ULL << GPIO_NUM_1);
+    // outputBitMask = outputBitMask | (1ULL << GPIO_NUM_3); // Used for a console application
+    // outputBitMask = outputBitMask | (1ULL << GPIO_NUM_1);    // Used for a console application
     outputBitMask = outputBitMask | (1ULL << GPIO_NUM_22);
     outputBitMask = outputBitMask | (1ULL << GPIO_NUM_23);
 

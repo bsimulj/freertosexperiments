@@ -15,13 +15,13 @@ void MailBox::ProcessRun()
 {
     if (MB.MessageAvailable() && (MB.CheckReceiver() == E_PROCESS_RECEIVE))
     {
-        ConsoleInterface::Instance().PrintResult("Process message available\n");
+        ConsoleInterface::Instance().PrintResult("Process message available\n"); // Not a thread safe implementation. To be fixed later
         Message message = MailBox::Instance().ReceiveMessage();
         switch (message.cmd)
         {
-        case E_READ_SCAN_TIME:
+        case MessageDefinition::E_READ_SCAN_TIME:
         {
-            message.receiver = E_CONSOLE_RECEIVE;
+            message.receiver = Receiver::E_CONSOLE_RECEIVE;
             message.cmd = E_READ_SCAN_TIME;
             message.value.scanTime_us = PIO.GetScanTime_us();
             MB.SendMessage(message);
@@ -42,10 +42,17 @@ void MailBox::ConsoleRun()
         Message message = MB.ReceiveMessage();
         switch (message.cmd)
         {
-        case E_READ_SCAN_TIME:
+        case MessageDefinition::E_READ_SCAN_TIME:
         {
             std::stringstream stream;
             stream << "Scan lenght " << message.value.scanTime_us << "us\n";
+            CONSOLE.PrintResult(stream.str());
+        }
+        break;
+        case MessageDefinition::E_GSM_GPRS_COMMAND:
+        {
+            std::stringstream stream;
+            stream << "Responce is: \n"; //<< message.stringValue
             CONSOLE.PrintResult(stream.str());
         }
         break;
