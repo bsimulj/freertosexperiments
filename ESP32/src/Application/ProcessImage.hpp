@@ -63,12 +63,13 @@ public:
     void Init();
     void ReadInputs();
     void WriteOutputs();
+    BoardIO &IO();
     uint16_t GetScanTime_us() const;
 
 private:
     ProcessImage();
     ~ProcessImage();
     BoardIO io_;
-    uint16_t scanTime_us;
+    uint32_t scanTime_us;
     uint64_t previousScan_us;
 };

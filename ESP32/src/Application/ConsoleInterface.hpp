@@ -15,8 +15,8 @@ public:
     void Init();
 
 private:
-    ConsoleInterface();
-    ~ConsoleInterface();
+    ConsoleInterface(){};
+    ~ConsoleInterface(){};
     std::string subset_;
     std::string subsetCommand_;
     std::string subsetArg0_;
