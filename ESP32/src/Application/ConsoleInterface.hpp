@@ -12,11 +12,13 @@ public:
     void ReadCommand();
     void ProcessCommand();
     void PrintResult(const std::string &s);
+    void MBConsoleRun();
     void Init();
 
 private:
     ConsoleInterface(){};
     ~ConsoleInterface(){};
+    bool setCpuFrequencyMhz(uint32_t cpu_freq_mhz);
     std::string subset_;
     std::string subsetCommand_;
     std::string subsetArg0_;
