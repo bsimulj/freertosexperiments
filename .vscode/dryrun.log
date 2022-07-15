@@ -1,0 +1,6 @@
+make --dry-run --always-make --keep-going --print-directory
+make: Entering directory '/home/cpp/Documents/ProjectSIM/freertosexperiments'
+make: Leaving directory '/home/cpp/Documents/ProjectSIM/freertosexperiments'
+ 
+make: *** No targets specified and no makefile found.  Stop.
+
