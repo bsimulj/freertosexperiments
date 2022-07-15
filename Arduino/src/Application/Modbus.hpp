@@ -21,12 +21,11 @@ struct ModbusRegister{
 };
 class Modbus{
     public:
-        Modbus()
-        {
-        }
+        Modbus();
+        ~Modbus();
         void Run();
     private:
-        void Int();
+        void Init();
 
 }
 
