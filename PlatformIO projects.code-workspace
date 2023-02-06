@@ -15,6 +15,12 @@
 		{
 			"name": "SPRINKLER",
 			"path": "ESP32_SPRINKLER"
+		},
+		{
+			"path": "HMI"
+		},
+		{
+			"path": "AQUARIUM_LIGHT"
 		}
 	],
 	"settings": {
@@ -111,7 +117,9 @@
 			"memory_resource": "cpp",
 			"string_view": "cpp",
 			"cinttypes": "cpp",
-			"*.ipp": "cpp"
+			"*.ipp": "cpp",
+			"lv_conf.h": "c",
+			"lvgl.h": "c"
 		}
 	}
 }
