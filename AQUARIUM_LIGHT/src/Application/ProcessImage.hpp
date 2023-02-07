@@ -1,36 +1,21 @@
 #pragma once
 
 #include <stdio.h>
+#include <bitset>
 #include <Primitives/Singleton.hpp>
 
 #define PIO ProcessImage::Instance()
 
-union ByteWrapper
+struct BoardIO
 {
-    struct Bits
-    {
-        uint8_t di0 : 1;
-        uint8_t di1 : 1;
-        uint8_t di2 : 1;
-        uint8_t di3 : 1;
-        uint8_t di4 : 1;
-        uint8_t di5 : 1;
-        uint8_t di6 : 1;
-        uint8_t di7 : 1;
-    } x;
-    uint8_t b0;
-};
-
-union BoardIO
-{
-    struct Bits
+    union Bits
     {
         // Left side     // GPIO :ChipIO : ADC   :RTCGPIO: TOUCH : REMARKS
         uint8_t d15 : 1; // 15   : 21    : 2_3   : 13    : 3     :
         uint8_t d2 : 1;  // 2    : 22    : 2_2   : 12    : 2     : buildInLed
         uint8_t d4 : 1;  // 4    : 24    : 2_0   : 10    : 0     :
-        uint8_t rx2 : 1; // 16   : 25    :
-        uint8_t tx2 : 1; // 17   : 27    :
+        uint8_t d16 : 1; // 16   : 25    :
+        uint8_t d17 : 1; // 17   : 27    :
         uint8_t d5 : 1;  // 5    : 34    :                       : JLink SS
         uint8_t d18 : 1; // 18   : 35    :                       : JLink SCK
         uint8_t d19 : 1; // 19   : 38    :                       : JLink MISO
@@ -54,23 +39,38 @@ union BoardIO
         uint8_t vp : 1;  // 36   : 5     : 1_0   : 0     :       : Input only
         uint8_t en : 1;  //      : 9
     } x;
+    uint32_t dw0;
 };
 
 class ProcessImage : public Singleton<ProcessImage>
 {
     friend class Singleton<ProcessImage>;
 public:
+    enum SignalDefinitions
+    {
+        E_FAR_LEFT_LIGHT = 0,
+        E_LEFT_LIGHT,
+        E_CENTER_LIGHT,
+        E_RIGHT_LIGHT,
+        E_FAR_RIGHT_LIGHT,
+        E_MAIN_LIGHT,
+
+        E_SIGNAL_COUNT
+    };
     void Init();
     void ReadInputs();
     void WriteOutputs();
     void MBPIORun();
-    BoardIO &IO();
+    void Output(SignalDefinitions signal, bool state);
     uint16_t GetScanTime_us() const;
 
 private:
+
     ProcessImage();
     ~ProcessImage();
-    BoardIO io_;
+    std::bitset<E_SIGNAL_COUNT>io_;
     uint32_t scanTime_us;
     uint64_t previousScan_us;
+    bool forceOutEnabled;
+    std::bitset<E_SIGNAL_COUNT>outForcingMask;
 };
