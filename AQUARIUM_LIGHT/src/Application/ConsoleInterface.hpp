@@ -1,6 +1,7 @@
 #pragma once
 #include <iostream>
 #include <string.h>
+#include <esp_console.h>
 #include <Primitives/Singleton.hpp>
 
 #define CONSOLE ConsoleInterface::Instance()
@@ -23,4 +24,5 @@ private:
     std::string subsetCommand_;
     std::string subsetArg0_;
     std::string subsetArg1_;
+    esp_console_repl_t *repl;
 };

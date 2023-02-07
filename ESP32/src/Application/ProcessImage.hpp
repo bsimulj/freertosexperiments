@@ -63,7 +63,7 @@ public:
     void Init();
     void ReadInputs();
     void WriteOutputs();
-    void MBProcessRun();
+    void MBPIORun();
     BoardIO &IO();
     uint16_t GetScanTime_us() const;
 

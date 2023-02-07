@@ -1,4 +1,5 @@
 #include "ProcessImage.hpp"
+#include "ConsoleInterface.hpp"
 #include <driver/gpio.h>
 
 #include <esp_timer.h>
@@ -7,6 +8,8 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <stdint.h>
+#include <cstring>
+#include <sstream>
 
 ProcessImage::ProcessImage()
 {
@@ -21,9 +24,9 @@ ProcessImage::~ProcessImage()
 {
 }
 
-void ProcessImage::MBProcessRun()
+void ProcessImage::MBPIORun()
 {
-    if (MB.MessageAvailable() && (MB.CheckReceiver() == E_PROCESS_RECEIVE))
+    if (THREAD_SAFE.MessageAvailable() && (THREAD_SAFE.CheckReceiver() == E_PIO_RECEIVE))
     {
         Message message = MailBox::Instance().ReceiveMessage();
         switch (message.cmd)
@@ -33,12 +36,22 @@ void ProcessImage::MBProcessRun()
             message.receiver = Receiver::E_CONSOLE_RECEIVE;
             message.cmd = E_READ_SCAN_TIME;
             message.value.scanTime_us = PIO.GetScanTime_us();
-            MB.SendMessage(message);
+            THREAD_SAFE.SendMessage(message);
+        }
+        break;
+        case MessageDefinition::E_FORCE_OUTPUTS_ENABLE:
+        {
+            forceOutEnabled = message.value.forceOutEnable;
+            THREAD_SAFE.PrintMessage("Force out enabled");
         }
         break;
         case MessageDefinition::E_FORCE_OUTPUTS:
         {
-            forceOutEnabled = message.value.forceOutEnable;
+            outForcingMask[message.value.signal.signal] = message.value.signal.value;
+
+            std::stringstream stream;
+            stream << "Forced sig:" << message.value.signal.signal << " as:" << message.value.signal.value;
+            THREAD_SAFE.PrintMessage(stream.str());
         }
         break;
         default:
@@ -49,6 +62,7 @@ void ProcessImage::MBProcessRun()
 
 void ProcessImage::ReadInputs()
 {
+    MBPIORun();
     // io_.x.d13 = gpio_get_level(GPIO_NUM_13);
     // io_.x.d12 = gpio_get_level(GPIO_NUM_12);
     // io_.x.d14 = gpio_get_level(GPIO_NUM_14);
@@ -64,13 +78,21 @@ void ProcessImage::ReadInputs()
 }
 void ProcessImage::WriteOutputs()
 {
+    if (forceOutEnabled)
+    {
+        io_ = outForcingMask;
+    }
+    else
+    {
+        outForcingMask = io_;
+    }
 
-    gpio_set_level(GPIO_NUM_5, io_.x.d5);
-    gpio_set_level(GPIO_NUM_17, io_.x.d17);
-    gpio_set_level(GPIO_NUM_16, io_.x.d16);
-    gpio_set_level(GPIO_NUM_4, io_.x.d4);
-    gpio_set_level(GPIO_NUM_2, io_.x.d2);
-    gpio_set_level(GPIO_NUM_15, io_.x.d15);
+    gpio_set_level(GPIO_NUM_5, !io_[E_FAR_LEFT_LIGHT]);
+    gpio_set_level(GPIO_NUM_17, !io_[E_LEFT_LIGHT]);
+    gpio_set_level(GPIO_NUM_16, !io_[E_CENTER_LIGHT]);
+    gpio_set_level(GPIO_NUM_4, !io_[E_RIGHT_LIGHT]);
+    gpio_set_level(GPIO_NUM_2, !io_[E_FAR_RIGHT_LIGHT]);
+    gpio_set_level(GPIO_NUM_15, !io_[E_MAIN_LIGHT]);
 
     uint64_t timeStamp_us = static_cast<uint64_t>(esp_timer_get_time());
     scanTime_us = static_cast<uint32_t>(timeStamp_us - previousScan_us);
@@ -79,9 +101,8 @@ void ProcessImage::WriteOutputs()
 
 void ProcessImage::Init()
 {
-    io_.dw0 = 0;
-    setForcingMask.dw0 = 0;
-    resetForcingMask.dw0 = 0xFFFF;
+    io_.reset();
+    outForcingMask.reset() = 0;
 
     previousScan_us = 0;
 
@@ -131,7 +152,7 @@ void ProcessImage::Init()
     gpio_config(&conf);
 }
 
-BoardIO &ProcessImage::IO()
+void ProcessImage::Output(SignalDefinitions signal, bool state)
 {
-    return io_;
+    io_[signal] = state;
 }

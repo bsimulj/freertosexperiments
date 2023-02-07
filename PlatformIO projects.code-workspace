@@ -119,7 +119,10 @@
 			"cinttypes": "cpp",
 			"*.ipp": "cpp",
 			"lv_conf.h": "c",
-			"lvgl.h": "c"
+			"lvgl.h": "c",
+			"bitset": "cpp",
+			"numbers": "cpp",
+			"netfwd": "cpp"
 		}
 	}
 }

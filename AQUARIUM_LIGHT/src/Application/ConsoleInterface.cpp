@@ -8,6 +8,8 @@
 #include <sstream>
 #include <stdio.h>
 
+#include <esp_log.h>
+
 void ConsoleInterface::Init()
 {
     subset_.clear();
@@ -29,6 +31,8 @@ void ConsoleInterface::ReadCommand()
     memset(&str, 0, sizeof(str));
     std::stringstream stream;
     fgets(str, sizeof(str), stdin);
+    fflush(stdin);
+
     stream << str;
 
     if (stream.str().length() != 0)
@@ -67,7 +71,7 @@ void ConsoleInterface::ProcessCommand()
         if (subsetCommand_ == "scanTime")
         {
             Message message;
-            message.receiver = E_PROCESS_RECEIVE;
+            message.receiver = E_PIO_RECEIVE;
             message.cmd = E_READ_SCAN_TIME;
 
             MailBox::Instance().SendMessage(message);
@@ -76,10 +80,71 @@ void ConsoleInterface::ProcessCommand()
         {
             bool enabled = std::stoi(subsetArg0_) == 1;
             Message message;
-            message.receiver = E_PROCESS_RECEIVE;
+            message.receiver = E_PIO_RECEIVE;
+            message.cmd = E_FORCE_OUTPUTS_ENABLE;
+            message.value.forceOutEnable = enabled;
+            THREAD_SAFE.SendMessage(message);
+        }
+        if (subsetCommand_ == "forceOut")
+        {
+            uint8_t signal = std::stoi(subsetArg0_);
+            bool value = std::stoi(subsetArg1_) == 1;
+            Message message;
+            message.receiver = E_PIO_RECEIVE;
             message.cmd = E_FORCE_OUTPUTS;
-            message.value.forceOutEnable = enabled;  
-            MB.SendMessage(message);
+            message.value.signal.signal = signal;
+            message.value.signal.value = value;
+            THREAD_SAFE.SendMessage(message);
+        }
+    }
+    else if (subset_ == "light")
+    {
+        subset_.clear();
+        PrintResult("light \n");
+        if (subsetCommand_ == "sethour")
+        {
+            uint32_t value = std::stoi(subsetArg0_);
+            Message message;
+            message.receiver = E_PROC_RECEIVE;
+            message.cmd = E_SET_HOUR;
+            message.value.timerValue = value;
+            THREAD_SAFE.SendMessage(message);
+        }
+        if (subsetCommand_ == "setmin")
+        {
+            uint32_t value = std::stoi(subsetArg0_);
+            Message message;
+            message.receiver = E_PROC_RECEIVE;
+            message.cmd = E_SET_MIN;
+            message.value.timerValue = value;
+            THREAD_SAFE.SendMessage(message);
+        }
+        if (subsetCommand_ == "phase1")
+        {
+            uint32_t value = std::stoi(subsetArg0_);
+            Message message;
+            message.receiver = E_PROC_RECEIVE;
+            message.cmd = E_SET_PHASE1;
+            message.value.timerValue = value;
+            THREAD_SAFE.SendMessage(message);
+        }
+        if (subsetCommand_ == "phase2")
+        {
+            uint32_t value = std::stoi(subsetArg0_);
+            Message message;
+            message.receiver = E_PROC_RECEIVE;
+            message.cmd = E_SET_PHASE2;
+            message.value.timerValue = value;
+            THREAD_SAFE.SendMessage(message);
+        }
+        if (subsetCommand_ == "phase3")
+        {
+            uint32_t value = std::stoi(subsetArg0_);
+            Message message;
+            message.receiver = E_PROC_RECEIVE;
+            message.cmd = E_SET_PHASE3;
+            message.value.timerValue = value;
+            THREAD_SAFE.SendMessage(message);
         }
     }
     else if (subset_ == "mcu")
@@ -127,23 +192,25 @@ void ConsoleInterface::ProcessCommand()
 
 void ConsoleInterface::MBConsoleRun()
 {
-    if (MB.MessageAvailable() && (MB.CheckReceiver() == E_CONSOLE_RECEIVE))
+    if (THREAD_SAFE.TextMessageAvailable())
     {
-        Message message = MB.ReceiveMessage();
+        std::stringstream stream;
+        stream << THREAD_SAFE.ReceiveTextMessage() << "\n";
+        PrintResult(stream.str());
+    }
+
+    if (THREAD_SAFE.MessageAvailable() && (THREAD_SAFE.CheckReceiver() == E_CONSOLE_RECEIVE))
+    {
+        Message message;
+        message = THREAD_SAFE.ReceiveMessage();
+
         switch (message.cmd)
         {
         case MessageDefinition::E_READ_SCAN_TIME:
         {
             std::stringstream stream;
             stream << "Scan lenght " << message.value.scanTime_us << "us\n";
-            CONSOLE.PrintResult(stream.str());
-        }
-        break;
-        case MessageDefinition::E_GSM_GPRS_COMMAND:
-        {
-            std::stringstream stream;
-            stream << "Responce is: " << message.stringValue << "\n"; 
-            CONSOLE.PrintResult(stream.str());
+            PrintResult(stream.str());
         }
         break;
 

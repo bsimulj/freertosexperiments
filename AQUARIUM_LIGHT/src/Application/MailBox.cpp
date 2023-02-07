@@ -1,59 +1,30 @@
 #include "MailBox.hpp"
+#include "ConsoleInterface.hpp"
 #include <Application/ConsoleInterface.hpp>
 #include <Application/ProcessImage.hpp>
 #include <freertos/queue.h>
 #include <sstream>
 
-MailBox &mbDebug = MB;
+MailBox &mbDebug = THREAD_SAFE;
 
 void MailBox::Init()
 {
     mailbox_ = xQueueCreate(1, sizeof(Message));
-}
-
-void MailBox::ProcessRun()
-{
-    if (MB.MessageAvailable() && (MB.CheckReceiver() == E_PROCESS_RECEIVE))
-    {
-        ConsoleInterface::Instance().PrintResult("Process message available\n"); // Not a thread safe implementation. To be fixed later
-        Message message = MailBox::Instance().ReceiveMessage();
-        switch (message.cmd)
-        {
-        case MessageDefinition::E_READ_SCAN_TIME:
-        {
-            message.receiver = Receiver::E_CONSOLE_RECEIVE;
-            message.cmd = E_READ_SCAN_TIME;
-            message.value.scanTime_us = PIO.GetScanTime_us();
-            MB.SendMessage(message);
-        }
-        break;
-
-        default:
-            break;
-        }
-    }
+    textMailbox_ = xQueueCreate(1, sizeof(TextMessage));
 }
 
 void MailBox::ConsoleRun()
 {
-    if (MB.MessageAvailable() && (MB.CheckReceiver() == E_CONSOLE_RECEIVE))
+    if (THREAD_SAFE.MessageAvailable() && (THREAD_SAFE.CheckReceiver() == E_CONSOLE_RECEIVE))
     {
-        CONSOLE.PrintResult("console message available\n");
-        Message message = MB.ReceiveMessage();
+        Message message = THREAD_SAFE.ReceiveMessage();
         switch (message.cmd)
         {
         case MessageDefinition::E_READ_SCAN_TIME:
         {
             std::stringstream stream;
             stream << "Scan lenght " << message.value.scanTime_us << "us\n";
-            CONSOLE.PrintResult(stream.str());
-        }
-        break;
-        case MessageDefinition::E_GSM_GPRS_COMMAND:
-        {
-            std::stringstream stream;
-            stream << "Responce is: \n"; //<< message.stringValue
-            CONSOLE.PrintResult(stream.str());
+            THREAD_SAFE.PrintMessage(stream.str());
         }
         break;
 
@@ -66,10 +37,10 @@ void MailBox::ConsoleRun()
 bool MailBox::MessageAvailable()
 {
     bool available = false;
-    if (mailbox_)
+    if (mailbox_ && textMailbox_)
     {
         Message received;
-        if (xQueuePeek(mailbox_, &received, (TickType_t)0))
+        if (xQueuePeek(mailbox_, &received, pdMS_TO_TICKS(0)))
         {
             available = true;
         }
@@ -83,7 +54,7 @@ uint8_t MailBox::CheckReceiver()
     if (mailbox_)
     {
         Message received;
-        if (xQueuePeek(mailbox_, &received, (TickType_t)0))
+        if (xQueuePeek(mailbox_, &received, pdMS_TO_TICKS(0)))
         {
             receiver = received.receiver;
         }
@@ -95,17 +66,58 @@ void MailBox::SendMessage(Message message)
 {
     if (mailbox_)
     {
-        xQueueSend(mailbox_, &message, (TickType_t)0); // portMAX_DELAY
+        xQueueSend(mailbox_, &message, pdMS_TO_TICKS(0)); // portMAX_DELAY
     }
 }
 
 Message MailBox::ReceiveMessage()
 {
     Message received;
-    received.receiver = E_NO_RECEIVE;
     if (mailbox_)
     {
-        xQueueReceive(mailbox_, &received, (TickType_t)0);
+        xQueueReceive(mailbox_, &received, pdMS_TO_TICKS(0));
     }
     return received;
+}
+
+bool MailBox::TextMessageAvailable()
+{
+    bool available = false;
+    if (textMailbox_)
+    {
+        TextMessage textReceived;
+        if (xQueuePeek(textMailbox_, &textReceived, pdMS_TO_TICKS(0)))
+        {
+            available = true;
+        }
+    }
+    return available;
+}
+
+void MailBox::PrintMessage(std::string text)
+{
+    TextMessage message;
+    memset(message.textMessage, 0, sizeof(message.textMessage));
+    text.copy(message.textMessage, text.length(), 0);
+
+    if (textMailbox_)
+    {
+        xQueueSend(textMailbox_, &message, pdMS_TO_TICKS(100));
+    }
+}
+
+std::string MailBox::ReceiveTextMessage()
+{
+    TextMessage message;
+    memset(message.textMessage, 0, sizeof(message.textMessage));
+
+    std::string string;
+    std::ostringstream stream;
+
+    if (textMailbox_)
+    {
+        xQueueReceive(textMailbox_, &message, pdMS_TO_TICKS(100));
+        string = message.textMessage;
+    }
+    return string;
 }

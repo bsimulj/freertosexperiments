@@ -1,25 +1,10 @@
 #pragma once
 
 #include <stdio.h>
+#include <bitset>
 #include <Primitives/Singleton.hpp>
 
 #define PIO ProcessImage::Instance()
-
-union ByteWrapper
-{
-    struct Bits
-    {
-        uint8_t di0 : 1;
-        uint8_t di1 : 1;
-        uint8_t di2 : 1;
-        uint8_t di3 : 1;
-        uint8_t di4 : 1;
-        uint8_t di5 : 1;
-        uint8_t di6 : 1;
-        uint8_t di7 : 1;
-    } x;
-    uint8_t b0;
-};
 
 struct BoardIO
 {
@@ -61,20 +46,31 @@ class ProcessImage : public Singleton<ProcessImage>
 {
     friend class Singleton<ProcessImage>;
 public:
+    enum SignalDefinitions
+    {
+        E_FAR_LEFT_LIGHT = 0,
+        E_LEFT_LIGHT,
+        E_CENTER_LIGHT,
+        E_RIGHT_LIGHT,
+        E_FAR_RIGHT_LIGHT,
+        E_MAIN_LIGHT,
+
+        E_SIGNAL_COUNT
+    };
     void Init();
     void ReadInputs();
     void WriteOutputs();
-    void MBProcessRun();
-    BoardIO &IO();
+    void MBPIORun();
+    void Output(SignalDefinitions signal, bool state);
     uint16_t GetScanTime_us() const;
 
 private:
+
     ProcessImage();
     ~ProcessImage();
-    BoardIO io_;
+    std::bitset<E_SIGNAL_COUNT>io_;
     uint32_t scanTime_us;
     uint64_t previousScan_us;
     bool forceOutEnabled;
-    BoardIO setForcingMask;
-    BoardIO resetForcingMask;
+    std::bitset<E_SIGNAL_COUNT>outForcingMask;
 };
